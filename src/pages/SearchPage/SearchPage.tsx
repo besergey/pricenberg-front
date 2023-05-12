@@ -10,17 +10,22 @@ import {
   TableHead,
   TableBody,
   Container,
-  TableContainer,
   InputBase,
   IconButton,
+  TableContainer,
+  Link,
 } from '@mui/material';
 import * as yup from 'yup';
-import { useSearchParams } from 'react-router-dom';
 import { Controller, useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { Link as RouterLink, generatePath, useSearchParams } from 'react-router-dom';
 import { Search as SearchIcon, FilterList as FilterIcon } from '@mui/icons-material';
 
+import routes from 'config/routes';
+
 import { FilterForm } from 'components/forms';
+
+import styles from './SearchPage.module.scss';
 
 interface SearchFormValues {
   query: string;
@@ -33,8 +38,8 @@ const searchFormSchema: yup.ObjectSchema<SearchFormValues> = yup.object().shape(
 const filterWidth = 240;
 
 const rows = [
-  { name: 'AMD 5500х', cores: 6, threads: 12, power: '90ватт', socket: 'AM4', price: 8700 },
-  { name: 'Intel i5 1499', cores: 6, threads: 12, power: '120ватт', socket: 'LGA 2066', price: 10500 },
+  { id: 1, name: 'AMD 5500х', cores: 6, threads: 12, power: '90ватт', socket: 'AM4', price: 8700 },
+  { id: 2, name: 'Intel i5 1499', cores: 6, threads: 12, power: '120ватт', socket: 'LGA 2066', price: 10500 },
 ];
 
 const SearchPage: React.FC = () => {
@@ -126,12 +131,18 @@ const SearchPage: React.FC = () => {
               </TableHead>
               <TableBody>
                 {rows.map((row) => (
-                  <TableRow key={row.name} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                  <TableRow key={row.id} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
                     <TableCell component="th" scope="row">
-                      {row.name}
+                      <Link
+                        className={styles.link}
+                        component={RouterLink}
+                        to={generatePath(routes.product, { productId: row.id })}
+                      >
+                        {row.name}
+                      </Link>
                     </TableCell>
-                    <TableCell align="right">{row.name}</TableCell>
                     <TableCell align="right">{row.cores}</TableCell>
+                    <TableCell align="right">{row.threads}</TableCell>
                     <TableCell align="right">{row.power}</TableCell>
                     <TableCell align="right">{row.socket}</TableCell>
                     <TableCell align="right">{row.price}₽</TableCell>
