@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
+import axios from 'axios';
 import * as yup from 'yup';
 import { useNavigate } from 'react-router-dom';
 import SearchIcon from '@mui/icons-material/Search';
@@ -8,7 +9,8 @@ import { Controller, useForm } from 'react-hook-form';
 import { Container, Grid, IconButton, InputBase, Paper, Typography } from '@mui/material';
 
 import routes from 'config/routes';
-import { categories } from 'const/categories';
+import { API_URL } from 'const/env';
+import { Category } from 'types/api';
 
 import { CategoryCard } from 'components/catalogPage';
 
@@ -22,6 +24,16 @@ const searchFormSchema: yup.ObjectSchema<SearchFormValues> = yup.object().shape(
 
 const CatalogPage: React.FC = () => {
   const navigate = useNavigate();
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  const getCategories = async () => {
+    try {
+      const response: { data: { categories: Category[] } } = await axios.get(`${API_URL}/categories`);
+      setCategories(response.data.categories);
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   const searchForm = useForm<SearchFormValues>({
     mode: 'onTouched',
@@ -34,6 +46,10 @@ const CatalogPage: React.FC = () => {
   const handleSearchSubmit = searchForm.handleSubmit(async (values) => {
     navigate(`${routes.search}?query=${values.query}`);
   });
+
+  useEffect(() => {
+    getCategories();
+  }, []);
 
   return (
     <Container
@@ -77,7 +93,12 @@ const CatalogPage: React.FC = () => {
       <Container maxWidth="lg">
         <Grid container spacing={2}>
           {categories.map((category) => (
-            <CategoryCard key={category.id} id={category.id} name={category.name} image={category.image} />
+            <CategoryCard
+              key={category.id}
+              id={category.id}
+              name={category.name}
+              image={`${API_URL}${category.picture}`}
+            />
           ))}
         </Grid>
       </Container>

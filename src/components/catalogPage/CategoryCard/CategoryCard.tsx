@@ -13,16 +13,7 @@ interface CategoryCardProps {
 
 const CategoryCard: React.FC<CategoryCardProps> = ({ id, image, name }) => {
   return (
-    <Grid
-      item
-      xs={12}
-      md={4}
-      component={Link}
-      to={`${routes.search}?category=${id}`}
-      sx={{
-        textDecoration: 'none',
-      }}
-    >
+    <Grid item xs={12} md={4} component={Link} to={`${routes.search}?category=${id}`} sx={{ textDecoration: 'none' }}>
       <Card>
         <CardMedia
           sx={{ height: 150, width: '100%', backgroundSize: 'contain', backgroundPosition: 'center' }}

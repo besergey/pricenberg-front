@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 import {
   Box,
+  Link,
   Paper,
   Table,
   Drawer,
@@ -13,8 +14,8 @@ import {
   InputBase,
   IconButton,
   TableContainer,
-  Link,
 } from '@mui/material';
+import axios from 'axios';
 import * as yup from 'yup';
 import { Controller, useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -22,6 +23,9 @@ import { Link as RouterLink, generatePath, useSearchParams } from 'react-router-
 import { Search as SearchIcon, FilterList as FilterIcon } from '@mui/icons-material';
 
 import routes from 'config/routes';
+import { API_URL } from 'const/env';
+import dictionary from 'const/dictionary';
+import { SearchResponse } from 'types/api';
 
 import { FilterForm } from 'components/forms';
 
@@ -37,14 +41,20 @@ const searchFormSchema: yup.ObjectSchema<SearchFormValues> = yup.object().shape(
 
 const filterWidth = 240;
 
-const rows = [
-  { id: 1, name: 'AMD 5500х', cores: 6, threads: 12, power: '90ватт', socket: 'AM4', price: 8700 },
-  { id: 2, name: 'Intel i5 1499', cores: 6, threads: 12, power: '120ватт', socket: 'LGA 2066', price: 10500 },
-];
-
 const SearchPage: React.FC = () => {
-  const [, setSearchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [isMobileFilterOpen, setIsMobileFilterOpen] = React.useState(false);
+
+  const [products, setProducts] = useState<SearchResponse | null>(null);
+
+  const getProducts = async (categoryId: string | null) => {
+    try {
+      const response: { data: SearchResponse } = await axios.get(`${API_URL}/products/search?category=${categoryId}`);
+      setProducts(response.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   const handleFilterToggle = () => {
     setIsMobileFilterOpen(!isMobileFilterOpen);
@@ -61,6 +71,11 @@ const SearchPage: React.FC = () => {
   const handleSearchSubmit = searchForm.handleSubmit(async (values) => {
     setSearchParams({ query: values.query });
   });
+
+  useEffect(() => {
+    const categoryId = searchParams.get('category');
+    getProducts(categoryId);
+  }, [searchParams]);
 
   return (
     <Box display="flex" flexDirection="column">
@@ -117,40 +132,44 @@ const SearchPage: React.FC = () => {
             </IconButton>
           </Paper>
 
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Название</TableCell>
-                  <TableCell align="right">Кол-во ядер</TableCell>
-                  <TableCell align="right">Кол-во потоков</TableCell>
-                  <TableCell align="right">Мощность</TableCell>
-                  <TableCell align="right">Сокет</TableCell>
-                  <TableCell align="right">Цена</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {rows.map((row) => (
-                  <TableRow key={row.id} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
-                    <TableCell component="th" scope="row">
-                      <Link
-                        className={styles.link}
-                        component={RouterLink}
-                        to={generatePath(routes.product, { productId: row.id })}
-                      >
-                        {row.name}
-                      </Link>
-                    </TableCell>
-                    <TableCell align="right">{row.cores}</TableCell>
-                    <TableCell align="right">{row.threads}</TableCell>
-                    <TableCell align="right">{row.power}</TableCell>
-                    <TableCell align="right">{row.socket}</TableCell>
-                    <TableCell align="right">{row.price}₽</TableCell>
+          {products && (
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Название</TableCell>
+                    {products.meta.fields.slice(0, 6).map((field) => (
+                      <TableCell key={field} align="right">
+                        {dictionary[field]}
+                      </TableCell>
+                    ))}
+                    <TableCell align="right">Цена</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                </TableHead>
+                <TableBody>
+                  {products.items.map((product) => (
+                    <TableRow key={product.id} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                      <TableCell component="th" scope="row">
+                        <Link
+                          className={styles.link}
+                          component={RouterLink}
+                          to={generatePath(routes.product, { productId: product.id })}
+                        >
+                          {product.name}
+                        </Link>
+                      </TableCell>
+                      {products.meta.fields.slice(0, 6).map((field) => (
+                        <TableCell key={field} align="right">
+                          {product.description[field] as string}
+                        </TableCell>
+                      ))}
+                      <TableCell align="right">10 000₽</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
         </Container>
       </Box>
     </Box>
