@@ -5,21 +5,17 @@ import {
   Grid,
   Paper,
   Table,
+  Button,
   TableRow,
+  TableHead,
   Container,
   TableBody,
   TableCell,
   Typography,
   CardContent,
   TableContainer,
-  Button,
-  TableHead,
 } from '@mui/material';
 import { Tooltip, Line, LineChart, ResponsiveContainer, XAxis, YAxis } from 'recharts';
-
-import productImage from 'static/images/product/intel.jpg';
-
-import styles from './ProductPage.module.scss';
 
 const chartData = [
   {
@@ -80,12 +76,7 @@ const ProductPage: React.FC = () => {
       </Typography>
 
       <Grid container spacing={4}>
-        <Grid item xs={12} md={6} xl={4}>
-          <Paper sx={{ width: '100%', height: 400, padding: 2 }}>
-            <img className={styles.image} src={productImage} alt="INTEL I5 10400F" />
-          </Paper>
-        </Grid>
-        <Grid item xs={12} md={6} xl={8}>
+        <Grid item xs={12} md={12}>
           <TableContainer component={Paper} sx={{ height: 400 }}>
             <Table>
               <TableBody>

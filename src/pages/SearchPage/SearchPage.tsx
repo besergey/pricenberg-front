@@ -14,6 +14,8 @@ import {
   InputBase,
   IconButton,
   TableContainer,
+  Pagination,
+  TableSortLabel,
 } from '@mui/material';
 import axios from 'axios';
 import * as yup from 'yup';
@@ -46,10 +48,15 @@ const SearchPage: React.FC = () => {
   const [isMobileFilterOpen, setIsMobileFilterOpen] = React.useState(false);
 
   const [products, setProducts] = useState<SearchResponse | null>(null);
+  const [productsPage, setProductsPage] = useState(1);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [order, setOrder] = useState<string | null>(null);
 
-  const getProducts = async (categoryId: string | null) => {
+  const getProducts = async (page: number, categoryId: string, query: string) => {
     try {
-      const response: { data: SearchResponse } = await axios.get(`${API_URL}/products/search?category=${categoryId}`);
+      const response: { data: SearchResponse } = await axios.get(
+        `${API_URL}/products/search?${categoryId ? `category=${categoryId}&` : ''}query=${query}&page=${page}`
+      );
       setProducts(response.data);
     } catch (error) {
       console.log(error);
@@ -64,18 +71,20 @@ const SearchPage: React.FC = () => {
     mode: 'onTouched',
     resolver: yupResolver(searchFormSchema),
     defaultValues: {
-      query: '',
+      query: searchParams.get('query') || '',
     },
   });
 
   const handleSearchSubmit = searchForm.handleSubmit(async (values) => {
-    setSearchParams({ query: values.query });
+    const categoryId = searchParams.get('category') || '';
+    setSearchParams({ query: values.query, category: categoryId });
   });
 
   useEffect(() => {
-    const categoryId = searchParams.get('category');
-    getProducts(categoryId);
-  }, [searchParams]);
+    const categoryId = searchParams.get('category') || '';
+    const query = searchParams.get('query') || '';
+    getProducts(productsPage, categoryId, query);
+  }, [searchParams, productsPage]);
 
   return (
     <Box display="flex" flexDirection="column">
@@ -133,42 +142,65 @@ const SearchPage: React.FC = () => {
           </Paper>
 
           {products && (
-            <TableContainer component={Paper}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Название</TableCell>
-                    {products.meta.fields.slice(0, 6).map((field) => (
-                      <TableCell key={field} align="right">
-                        {dictionary[field]}
-                      </TableCell>
-                    ))}
-                    <TableCell align="right">Цена</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {products.items.map((product) => (
-                    <TableRow key={product.id} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
-                      <TableCell component="th" scope="row">
-                        <Link
-                          className={styles.link}
-                          component={RouterLink}
-                          to={generatePath(routes.product, { productId: product.id })}
-                        >
-                          {product.name}
-                        </Link>
-                      </TableCell>
+            <>
+              <TableContainer component={Paper}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Название</TableCell>
                       {products.meta.fields.slice(0, 6).map((field) => (
-                        <TableCell key={field} align="right">
-                          {product.description[field] as string}
+                        <TableCell key={field} align="right" sortDirection={order === field ? sortDirection : false}>
+                          <TableSortLabel
+                            active={order === field}
+                            direction={order === field ? sortDirection : 'asc'}
+                            onClick={() => {
+                              if (order === field) {
+                                setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+                              } else {
+                                setSortDirection('desc');
+                                setOrder(field);
+                              }
+                            }}
+                          >
+                            {dictionary[field]}
+                          </TableSortLabel>
                         </TableCell>
                       ))}
-                      <TableCell align="right">10 000₽</TableCell>
+                      <TableCell align="right">Цена</TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                  </TableHead>
+                  <TableBody>
+                    {products.items.map((product) => (
+                      <TableRow key={product.id} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                        <TableCell component="th" scope="row">
+                          <Link
+                            className={styles.link}
+                            component={RouterLink}
+                            to={generatePath(routes.product, { productId: product.id })}
+                          >
+                            {product.name}
+                          </Link>
+                        </TableCell>
+                        {products.meta.fields.slice(0, 6).map((field) => (
+                          <TableCell key={field} align="right">
+                            {product.description[field] as string}
+                          </TableCell>
+                        ))}
+                        <TableCell align="right">{product.price}₽</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+              <Pagination
+                style={{ marginTop: 24 }}
+                count={Math.floor(products.meta.total / 10)}
+                page={productsPage}
+                onChange={(_event, newPage) => {
+                  setProductsPage(newPage);
+                }}
+              />
+            </>
           )}
         </Container>
       </Box>

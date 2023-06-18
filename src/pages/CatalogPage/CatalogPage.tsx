@@ -61,7 +61,7 @@ const CatalogPage: React.FC = () => {
     >
       <Container maxWidth="sm">
         <Typography component="h1" variant="h2" align="center" color="text.primary" gutterBottom>
-          ПРАЙZЕНБЕРГ
+          ПРАЙЗЕНБЕРГ
         </Typography>
         <Typography variant="h5" align="center" color="text.secondary" paragraph>
           Свободный агрегатор цен

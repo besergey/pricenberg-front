@@ -7,6 +7,7 @@ export type Category = {
 export type Product = {
   id: number;
   name: string;
+  price: number;
   description: {
     properties?: {
       [key: string]: string;
