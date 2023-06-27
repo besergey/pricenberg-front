@@ -4,12 +4,21 @@ export type Category = {
   picture: string;
 };
 
+export enum ProductDescriptionType {
+  Processor = 'Processor',
+  Videocard = 'Videocard',
+  HardDrive = 'HardDrive',
+  SolidDrive = 'SolidDrive',
+  MemoryKit = 'MemoryKit',
+}
+
 export type Product = {
   id: number;
   name: string;
   price: number;
+  description_type: ProductDescriptionType;
   description: {
-    properties?: {
+    additional_properties?: {
       [key: string]: string;
     };
     [key: string]:

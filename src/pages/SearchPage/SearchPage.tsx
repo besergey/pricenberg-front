@@ -27,7 +27,7 @@ import { Search as SearchIcon, FilterList as FilterIcon } from '@mui/icons-mater
 import routes from 'config/routes';
 import { API_URL } from 'const/env';
 import dictionary from 'const/dictionary';
-import { SearchResponse } from 'types/api';
+import { SearchResponse, Category } from 'types/api';
 
 import { FilterForm } from 'components/forms';
 
@@ -51,12 +51,43 @@ const SearchPage: React.FC = () => {
   const [productsPage, setProductsPage] = useState(1);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [order, setOrder] = useState<string | null>(null);
+  const [currentCategoryFilterFields, setCurrentCategoryFilterFields] = useState<{
+    [key: string]: string | { [key: string]: string };
+  }>({});
 
-  const getProducts = async (page: number, categoryId: string, query: string) => {
+  const [category, setCategory] = useState<Category | null>(null);
+
+  const getProducts = async (
+    page: number,
+    categoryId: string,
+    query: string,
+    categoryName?: string,
+    params?: string
+  ) => {
     try {
-      const response: { data: SearchResponse } = await axios.get(
-        `${API_URL}/products/search?${categoryId ? `category=${categoryId}&` : ''}query=${query}&page=${page}`
-      );
+      let url = `${API_URL}/products/search?query=${query}&page=${page}&`;
+
+      if (categoryId) {
+        url += `category=${categoryId}&`;
+      }
+
+      if (categoryName) {
+        url += `category_name=${categoryName}&`;
+      }
+
+      if (order) {
+        url += `order_by=${order}&`;
+      }
+
+      if (sortDirection) {
+        url += `sort_direction=${sortDirection}&`;
+      }
+
+      if (params) {
+        url += params;
+      }
+
+      const response: { data: SearchResponse } = await axios.get(url);
       setProducts(response.data);
     } catch (error) {
       console.log(error);
@@ -80,11 +111,30 @@ const SearchPage: React.FC = () => {
     setSearchParams({ query: values.query, category: categoryId });
   });
 
+  const buildFilterFieldsParams = (fields: object) => {
+    let params = [];
+    for (const [key, value] of Object.entries(fields)) {
+      params.push(`${key}=${value}`);
+    }
+
+    return params.join('&');
+  };
+
+  useEffect(() => {
+    console.log('inUseEffectForOrder', order);
+    setOrder(null);
+  }, [category]);
+
   useEffect(() => {
     const categoryId = searchParams.get('category') || '';
+    const categoryName = searchParams.get('categoryName') || '';
     const query = searchParams.get('query') || '';
-    getProducts(productsPage, categoryId, query);
-  }, [searchParams, productsPage]);
+    getProducts(productsPage, categoryId, query, categoryName, buildFilterFieldsParams(currentCategoryFilterFields));
+  }, [searchParams, productsPage, order, sortDirection]);
+
+  useEffect(() => {
+    setSearchParams({ ...currentCategoryFilterFields, ...searchParams });
+  }, [currentCategoryFilterFields]);
 
   return (
     <Box display="flex" flexDirection="column">
@@ -100,7 +150,7 @@ const SearchPage: React.FC = () => {
           '& .MuiDrawer-paper': { boxSizing: 'border-box', width: filterWidth },
         }}
       >
-        <FilterForm />
+        <FilterForm setCategory={setCategory} setFilterFields={setCurrentCategoryFilterFields} />
       </Drawer>
       <Drawer
         variant="permanent"
@@ -110,7 +160,7 @@ const SearchPage: React.FC = () => {
         }}
         open
       >
-        <FilterForm />
+        <FilterForm setCategory={setCategory} setFilterFields={setCurrentCategoryFilterFields} />
       </Drawer>
 
       <Box sx={{ pt: 2, pb: 4, pl: { md: `${filterWidth}px` } }}>
